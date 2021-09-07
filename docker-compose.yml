@@ -1,0 +1,7 @@
+version: "3"
+services:
+  python_dev:
+    build: ./docker
+    container_name: python_dev
+    volumes:
+      - ./:/google-photo-backup
