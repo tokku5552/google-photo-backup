@@ -2,6 +2,7 @@
     "python.linting.lintOnSave": false,
     "python.linting.pylintEnabled": false,
     "python.linting.pylintArgs": [
-        "--extension-pkg-whitelist=google,google_auth_oauthlib,googleapiclient"
-    ]
+        "--extension-pkg-whitelist=google.oauth2.credentials"
+    ],
+    "python.analysis.autoImportCompletions": false
 }
