@@ -88,9 +88,8 @@ def getMediaIds(service):
             nextPageTokenMediaItems = mediaItems['nextPageToken']
         else:
             break
-    pprint.pprint(photos)
-    pprint.pprint(videos)
-    print('photos :'+str(len(photos))+',videos :'+str(len(videos)))
+
+    return photos, videos
 
 
 def main():
@@ -100,7 +99,10 @@ def main():
         API_VERSION,
         credentials=credentials, static_discovery=False
     )
-    getMediaIds(service)
+    photos, videos = getMediaIds(service)
+    pprint.pprint(photos)
+    pprint.pprint(videos)
+    print('photos :'+str(len(photos))+',videos :'+str(len(videos)))
     # result: dict = service.mediaItems().list(pageSize=1).execute()
     # print(json.dumps(result, ensure_ascii=False))
 
