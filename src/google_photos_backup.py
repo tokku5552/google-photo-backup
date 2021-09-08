@@ -3,6 +3,7 @@
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
+from logging import getLogger, basicConfig
 import json
 import os
 import pprint
@@ -25,6 +26,12 @@ QUERY_FILTER = settings.QUERY_FILTER
 PAST_YEARS = settings.PAST_YEARS
 PAST_MONTHS = settings.PAST_MONTHS
 PAST_DAYS = settings.PAST_DAYS
+LOGGING_LEVEL = settings.LOGGING_LEVEL
+
+# logger setting
+logger = getLogger(__name__)
+basicConfig(filename='/var/log/google_photos_backup.log',
+            format='%(asctime)s : [%(levelname)s] [%(filename)s] %(message)s', level=LOGGING_LEVEL)
 
 
 def support_datetime_default(o: object) -> None:
@@ -95,6 +102,7 @@ def getMediaIds(service):
     photos = []
     videos = []
     now = datetime.now()
+    logger.debug('datetime.now() : %s', now)
     nextPageTokenMediaItems = ''
     while True:
         queryBody = getQueryBody(nextPageTokenMediaItems, now, QUERY_FILTER)
@@ -114,11 +122,12 @@ def getMediaIds(service):
             nextPageTokenMediaItems = mediaItems['nextPageToken']
         else:
             break
-
+    logger.debug('photos length = %s', len(photos))
+    logger.debug('videos length = %s', len(videos))
     return photos, videos
 
 
-def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool) -> dict[str, any]:
+def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool):
     """
     GooglePhotoAPIに接続するときのquery bodyを生成する
 
@@ -127,11 +136,14 @@ def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool) -> dict
     body : dict[str,any]
         query body
     """
+    logger.info('getQueryBody:isFilter = %s', isFilter)
     if not isFilter:
         body = {
             'pageSize': 50,
             'pageToken': nextPageTokenMediaItems
         }
+        logger.debug('Query Body is...')
+        logger.debug(body)
         return body
 
     body = {
@@ -156,6 +168,8 @@ def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool) -> dict
         },
         'pageToken': nextPageTokenMediaItems
     }
+    logger.debug('Query Body is...')
+    logger.debug(body)
     return body
 
 
@@ -178,13 +192,19 @@ def downloadMedia(mediaItems: list, isVideo: bool) -> list:
     suffix: str = '=d'
     if isVideo:
         suffix = '=dv'
+        logger.info('download videos')
+    else:
+        logger.info('download photos')
     if not os.path.exists(TMP_DIR):
         os.mkdir(TMP_DIR)
+        logger.warning(
+            'created [%s] because the folder did not exist', TMP_DIR)
     ids = []
     for item in mediaItems:
         urllib.request.urlretrieve(
             item['url']+suffix, TMP_DIR+'/'+item['filename'])
         ids.append(item['id'])
+    logger.info('%s media downloads completed', len(ids))
     return ids
 
 
@@ -192,6 +212,7 @@ def toJsonFromIds(ids: list) -> None:
     """
     download済みのIdをリストとしてファイルに出力する
     """
+    logger.debug('aquired_media_list : %s', AQUIRED_MEDIA_LIST)
     with open(AQUIRED_MEDIA_LIST, 'w') as f:
         json.dump(ids, f, ensure_ascii=False)
 
@@ -204,6 +225,9 @@ def loadIdsJson() -> list:
     if os.path.exists(AQUIRED_MEDIA_LIST):
         with open(AQUIRED_MEDIA_LIST) as f_credential_r:
             result = json.loads(f_credential_r.read())
+        logger.debug('loadIdsJson : aquired media list size = %s', len(result))
+    else:
+        logger.warning('loadIdsJson: not file exist %s', AQUIRED_MEDIA_LIST)
     return result
 
 
@@ -224,6 +248,7 @@ def removeAquiredMedia(mediaItems: list, ids: list) -> list:
         if not item['id'] in ids:
             tmp['id'], tmp['url'], tmp['filename'] = item['id'], item['url'], item['filename']
             result.append(tmp)
+    logger.debug('removeAquiredMedia : result list counts = %s', len(result))
     return result
 
 
@@ -232,11 +257,18 @@ def moveFiles(destinationPath):
     TMP_DIRにダウンロードしたファイルを
     destinationPathにmoveする
     """
-    for p in glob.glob(TMP_DIR+'/*', recursive=False):
-        shutil.move(p, destinationPath)
+    try:
+        for p in glob.glob(TMP_DIR+'/*', recursive=False):
+            shutil.move(p, destinationPath)
+        logger.info('done file moving')
+    except shutil.Error as e:
+        logger.error('shutil.Error: Destination path')
+        logger.error(e)
+        logger.warning('failed file moving')
 
 
 def main():
+    logger.info('start script')
     # クレデンシャルを取得
     credentials = getCredentials()
     service = build(
@@ -245,26 +277,38 @@ def main():
         credentials=credentials, static_discovery=False
     )
     # mediaIdを取得
+    logger.info('start : get media ids')
     photos, videos = getMediaIds(service)
+    logger.info('end : get media ids')
 
     # 取得済みのメディアを削除
+    logger.info('start : remove aquired media ids')
     acquiredIds = loadIdsJson()
     photos = removeAquiredMedia(photos, acquiredIds)
     videos = removeAquiredMedia(videos, acquiredIds)
+    logger.info('end : remove aquired media ids')
 
     # メディアのダウンロード
+    logger.info('start : download media')
     photoIds = downloadMedia(photos, False)
     videoIds = downloadMedia(videos, True)
+    logger.info('end : download media')
 
     # バックアップフォルダへの移動
+    logger.info('start : move files')
     moveFiles(DESTINATION_DIR)
+    logger.info('end : move files')
 
     # 取得済みリストの更新
+    logger.info('start : update aquired list json')
     result = []
     result.extend(photoIds)
     result.extend(videoIds)
     result.extend(acquiredIds)
     toJsonFromIds(result)
+    logger.info('end : update aquired list json')
+
+    logger.info('All Proccess Complete!')
 
 
 if __name__ == "__main__":
