@@ -44,12 +44,12 @@ def getCredentials():
     return credentials
 
 
-def getPhotos(service):
+def getMediaIds(service):
     photos = []
+    videos = []
     now = datetime.now()
     nextPageTokenMediaItems = ''
     while True:
-        photo = {}
         body = {
             'pageSize': 50,
             "filters": {
@@ -57,8 +57,8 @@ def getPhotos(service):
                     "ranges": [
                         {
                             "startDate": {
-                                "year": now.year,
-                                "month": now.month - 1,
+                                "year": now.year - 1,
+                                "month": now.month,
                                 "day": now.day
                             },
                             "endDate": {
@@ -73,16 +73,24 @@ def getPhotos(service):
             'pageToken': nextPageTokenMediaItems
         }
         mediaItems = service.mediaItems().search(body=body).execute()
-        # pprint.pprint(mediaItems)
         for mediaItem in mediaItems['mediaItems']:
-            photo['id'], photo['filename'], photo['url'] = mediaItem['id'], mediaItem['filename'], mediaItem['baseUrl']
-            pprint.pprint(mediaItem)
-            photos.append(photo)
+            photo = {}
+            video = {}
+            if 'photo' in mediaItem['mediaMetadata']:
+                photo['id'], photo['filename'], photo['url'] = mediaItem['id'], mediaItem[
+                    'filename'], mediaItem['baseUrl']
+                photos.append(photo)
+            else:
+                video['id'], video['filename'], video['url'] = mediaItem['id'], mediaItem[
+                    'filename'], mediaItem['baseUrl']
+                videos.append(video)
         if 'nextPageToken' in mediaItems:
             nextPageTokenMediaItems = mediaItems['nextPageToken']
         else:
             break
     pprint.pprint(photos)
+    pprint.pprint(videos)
+    print('photos :'+str(len(photos))+',videos :'+str(len(videos)))
 
 
 def main():
@@ -92,7 +100,7 @@ def main():
         API_VERSION,
         credentials=credentials, static_discovery=False
     )
-    getPhotos(service)
+    getMediaIds(service)
     # result: dict = service.mediaItems().list(pageSize=1).execute()
     # print(json.dumps(result, ensure_ascii=False))
 
