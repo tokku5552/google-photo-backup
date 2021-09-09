@@ -27,10 +27,11 @@ PAST_YEARS = settings.PAST_YEARS
 PAST_MONTHS = settings.PAST_MONTHS
 PAST_DAYS = settings.PAST_DAYS
 LOGGING_LEVEL = settings.LOGGING_LEVEL
+LOG_FILENAME = settings.LOG_FILENAME
 
 # logger setting
 logger = getLogger(__name__)
-basicConfig(filename='/var/log/google_photos_backup.log',
+basicConfig(filename=LOG_FILENAME,
             format='%(asctime)s : [%(levelname)s] [%(filename)s] %(message)s', level=LOGGING_LEVEL)
 
 

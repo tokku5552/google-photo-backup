@@ -12,3 +12,4 @@ PAST_YEARS = 0
 PAST_MONTHS = 1
 PAST_DAYS = 0
 LOGGING_LEVEL = 20  # DEBUG=10,INFO=20
+LOG_FILENAME = '/var/log/google_photos_backup.log'
