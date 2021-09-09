@@ -273,7 +273,7 @@ def moveFiles(destinationPath):
     """
     try:
         for p in glob.glob(TMP_DIR+'/*', recursive=False):
-            newPath = duplicate_rename(destinationPath+'/'+p)
+            newPath = duplicate_rename(destinationPath+'/'+p[4:])
             shutil.move(p, newPath)
         logger.info('done file moving')
     except shutil.Error as e:
