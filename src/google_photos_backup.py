@@ -273,13 +273,26 @@ def moveFiles(destinationPath):
     """
     try:
         for p in glob.glob(TMP_DIR+'/*', recursive=False):
-            shutil.move(p, destinationPath)
+            newPath = duplicate_rename(destinationPath+'/'+p)
+            shutil.move(p, newPath)
         logger.info('done file moving')
     except shutil.Error as e:
         logger.error('shutil.Error: Destination path')
         logger.error(e)
         logger.warning('failed file moving')
 
+def duplicate_rename(file_path):
+    if os.path.exists(file_path):
+        name, ext = os.path.splitext(file_path)
+        i = 1
+        while True:
+            # 数値を3桁などにしたい場合は({:0=3})とする
+            new_name = "{} ({}){}".format(name, i, ext)
+            if not os.path.exists(new_name):
+                return new_name
+            i += 1
+    else:
+        return file_path
 
 def main():
     logger.info('start script')
