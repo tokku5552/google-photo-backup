@@ -6,7 +6,6 @@ from googleapiclient.discovery import build
 from logging import getLogger, basicConfig
 import json
 import os
-import pprint
 from datetime import datetime
 import urllib.request
 import shutil
