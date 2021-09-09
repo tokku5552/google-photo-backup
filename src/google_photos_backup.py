@@ -107,6 +107,7 @@ def getMediaIds(service):
     while True:
         queryBody = getQueryBody(nextPageTokenMediaItems, now, QUERY_FILTER)
         mediaItems = service.mediaItems().search(body=queryBody).execute()
+        logger.debug('mediaItems length = %s', len(mediaItems))
         for mediaItem in mediaItems['mediaItems']:
             photo = {}
             video = {}
