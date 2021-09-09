@@ -146,7 +146,7 @@ def getQueryBody(nextPageTokenMediaItems, referenceDate: datetime, isFilter: boo
     body : dict[str,any]
         query body
     """
-    logger.info('getQueryBody:isFilter = %s', isFilter)
+    logger.info('getQueryBody : isFilter = %s', isFilter)
     if not isFilter:
         body = {
             'pageSize': 50,
@@ -158,6 +158,7 @@ def getQueryBody(nextPageTokenMediaItems, referenceDate: datetime, isFilter: boo
     
     # startDateの計算
     startDate = getDate(referenceDate,PAST_YEARS,PAST_MONTHS,PAST_DAYS)
+    logger.info('startDate is %s', startDate)
     body = {
         'pageSize': 50,
         "filters": {
