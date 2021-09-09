@@ -214,7 +214,7 @@ def downloadMedia(mediaItems: list, isVideo: bool) -> list:
             'created [%s] because the folder did not exist', TMP_DIR)
     ids = []
     for item in mediaItems:
-        logger.debug('download : ',item['url']+suffix, TMP_DIR+'/'+item['filename'])
+        logger.debug('download url : %s filename : %s',item['url']+suffix, TMP_DIR+'/'+item['filename'])
         urllib.request.urlretrieve(
             item['url']+suffix, TMP_DIR+'/'+item['filename'])
         ids.append(item['id'])
