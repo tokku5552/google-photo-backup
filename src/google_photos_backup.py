@@ -6,7 +6,8 @@ from googleapiclient.discovery import build
 from logging import getLogger, basicConfig
 import json
 import os
-from datetime import datetime
+from datetime import datetime,timedelta,date
+from dateutil.relativedelta import relativedelta
 import urllib.request
 import shutil
 import glob
@@ -102,6 +103,7 @@ def getMediaIds(service):
     photos = []
     videos = []
     now = datetime.now()
+    nowd=date.today()
     logger.debug('datetime.now() : %s', now)
     nextPageTokenMediaItems = ''
     while True:
@@ -130,8 +132,12 @@ def getMediaIds(service):
     logger.debug('videos length = %s', len(videos))
     return photos, videos
 
+def getDate(referenceDate: datetime, pastYear: int, pastMonth: int, pastDay: int) -> datetime:
+    day = referenceDate - relativedelta(years=pastYear) - relativedelta(months=pastMonth) -relativedelta(days=pastDay)
+    return day
 
-def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool):
+
+def getQueryBody(nextPageTokenMediaItems, referenceDate: datetime, isFilter: bool):
     """
     GooglePhotoAPIに接続するときのquery bodyを生成する
 
@@ -149,7 +155,9 @@ def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool):
         logger.debug('Query Body is...')
         logger.debug(body)
         return body
-
+    
+    # startDateの計算
+    startDate = getDate(referenceDate,PAST_YEARS,PAST_MONTHS,PAST_DAYS)
     body = {
         'pageSize': 50,
         "filters": {
@@ -157,9 +165,9 @@ def getQueryBody(nextPageTokenMediaItems, referenceDate, isFilter: bool):
                 "ranges": [
                     {
                         "startDate": {
-                            "year": referenceDate.year - PAST_YEARS,
-                            "month": referenceDate.month - PAST_MONTHS,
-                            "day": referenceDate.day - PAST_DAYS
+                            "year": startDate.year,
+                            "month": startDate.month,
+                            "day": startDate.day
                         },
                         "endDate": {
                             "year": referenceDate.year,
